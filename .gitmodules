@@ -1,0 +1,6 @@
+[submodule "services/backend"]
+	path = services/backend
+	url = git@github.com:Koshsky/erp-backend.git
+[submodule "services/frontend"]
+	path = services/frontend
+	url = git@github.com:Koshsky/erp-frontend.git
