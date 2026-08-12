@@ -4,8 +4,12 @@ services:
     container_name: nginx
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/certs:/etc/nginx/certs
+      - ./scripts/generate-certs.sh:/usr/local/bin/generate-certs.sh:ro
+      - ./nginx/docker-entrypoint.d:/docker-entrypoint.d:ro
     depends_on:
       - erp
       - frontend
