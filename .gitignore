@@ -23,3 +23,7 @@ docker-compose.override.yml
 temp/
 tmp/
 backups/
+# Локальные кэши сборки Electron (создаются при упаковке desktop/)
+.electron-cache/
+.npm-cache/
+.xdg-cache/
