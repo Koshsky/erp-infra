@@ -86,3 +86,10 @@ volumes:
 networks:
   app-network:
     driver: bridge
+    # Явная подсеть, чтобы IP контейнеров (в т.ч. nginx) были стабильны между
+    # пересозданиями. Значение должно совпадать с trusted_proxies в
+    # services/backend/config.yaml — иначе Gin не будет доверять nginx как
+    # источнику реального IP клиента, и per-IP rate limit сломается.
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16

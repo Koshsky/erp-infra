@@ -27,3 +27,5 @@ backups/
 .electron-cache/
 .npm-cache/
 .xdg-cache/
+# Локальный кэш Go-сборки (используется сборочной средой)
+.gocache/
