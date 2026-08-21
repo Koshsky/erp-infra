@@ -33,6 +33,17 @@ services:
     expose:
       - "8080"
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP/gRPC collector (backend: jaeger:4317)
+    networks:
+      - app-network
+
   frontend:
     build:
       context: ./services/frontend

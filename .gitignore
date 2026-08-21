@@ -31,5 +31,9 @@ backups/
 .xdg-cache/
 # Локальный кэш Go-сборки (используется сборочной средой)
 .gocache/
+# Локальные кэши Go-модулей/пути и линтера (writable-обходы read-only module cache)
+.gomodcache/
+.gopath/
+.lintcache/
 # Локальный кэш Docker (используется сборочной средой, см. DOCKER_CONFIG)
 .docker-cfg/
