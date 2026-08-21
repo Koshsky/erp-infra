@@ -1,5 +1,7 @@
 .env
 
+SECURITY_AUDIT.md
+
 *.pid
 *.pid.lock
 docker-compose.override.yml
@@ -29,3 +31,5 @@ backups/
 .xdg-cache/
 # Локальный кэш Go-сборки (используется сборочной средой)
 .gocache/
+# Локальный кэш Docker (используется сборочной средой, см. DOCKER_CONFIG)
+.docker-cfg/
