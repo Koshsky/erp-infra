@@ -1,6 +1,14 @@
 .env
 
 SECURITY_AUDIT.md
+.electron-cache/
+.npm-cache/
+.xdg-cache/
+.gocache/
+.gomodcache/
+.gopath/
+.lintcache/
+.docker-cfg/
 
 *.pid
 *.pid.lock
@@ -25,15 +33,3 @@ docker-compose.override.yml
 temp/
 tmp/
 backups/
-# Локальные кэши сборки Electron (создаются при упаковке desktop/)
-.electron-cache/
-.npm-cache/
-.xdg-cache/
-# Локальный кэш Go-сборки (используется сборочной средой)
-.gocache/
-# Локальные кэши Go-модулей/пути и линтера (writable-обходы read-only module cache)
-.gomodcache/
-.gopath/
-.lintcache/
-# Локальный кэш Docker (используется сборочной средой, см. DOCKER_CONFIG)
-.docker-cfg/
