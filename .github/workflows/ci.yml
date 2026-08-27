@@ -1,8 +1,8 @@
-# CI для erp-infra (корневой репозиторий: docker-compose, nginx, скрипты).
-# Проверка «CI / Branch policy» — required status check для main/staging/dev
-# (см. scripts/branch-protection/ в этом же репозитории).
-# Дополнительные проверки (docker compose config, nginx -t) можно добавить
-# позже — сейчас они требуют .env и других секретов, которых нет в CI.
+# CI for erp-infra (root repository: docker-compose, nginx, scripts).
+# The "CI / Branch policy" check is the required status check for main/staging/dev
+# (see scripts/branch-protection/ in this repository).
+# Additional checks (docker compose config, nginx -t) can be added later —
+# they currently require .env and secrets that are not available in CI.
 name: CI
 
 on:
@@ -14,8 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  # Веточная политика: main принимает PR только из staging,
-  # staging — только из dev, dev — только из feature/* и hotfix/*.
+  # Branch policy: main accepts pull requests only from staging,
+  # staging accepts pull requests only from dev, dev accepts pull requests
+  # only from feature/* and hotfix/*.
   policy:
     name: Branch policy
     runs-on: ubuntu-latest
@@ -24,21 +25,22 @@ jobs:
         env:
           BASE: ${{ github.base_ref }}
           HEAD: ${{ github.head_ref }}
-        # на push (без PR) base_ref/head_ref пустые — попадаем в `*` и проходим
+        # On push (no PR) base_ref/head_ref are empty — the `*` branch is
+        # matched and the check passes.
         run: |
           case "$BASE" in
             main)
-              [ "$HEAD" = "staging" ] && echo "OK: main <- staging" \
-                || { echo "main принимает PR только из staging (получено: $HEAD)"; exit 1; }
+              [ "$HEAD" = "staging" ] && echo "PASS: source branch 'staging' is permitted for target branch 'main'" \
+                || { echo "FAIL: target branch 'main' requires source branch 'staging'; received '$HEAD'"; exit 1; }
               ;;
             staging)
-              [ "$HEAD" = "dev" ] && echo "OK: staging <- dev" \
-                || { echo "staging принимает PR только из dev (получено: $HEAD)"; exit 1; }
+              [ "$HEAD" = "dev" ] && echo "PASS: source branch 'dev' is permitted for target branch 'staging'" \
+                || { echo "FAIL: target branch 'staging' requires source branch 'dev'; received '$HEAD'"; exit 1; }
               ;;
             dev)
               case "$HEAD" in
-                feature/*|hotfix/*) echo "OK: dev <- $HEAD" ;;
-                *) echo "dev принимает PR только из feature/* или hotfix/* (получено: $HEAD)"; exit 1 ;;
+                feature/*|hotfix/*) echo "PASS: source branch '$HEAD' is permitted for target branch 'dev'" ;;
+                *) echo "FAIL: target branch 'dev' requires a source branch matching 'feature/*' or 'hotfix/*'; received '$HEAD'"; exit 1 ;;
               esac
               ;;
             *)

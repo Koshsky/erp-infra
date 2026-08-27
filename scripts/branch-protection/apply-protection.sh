@@ -23,7 +23,7 @@ CHECK_CONTEXT="CI / Branch policy"
 REQUIRED_REVIEWS=1
 
 if ! gh auth status >/dev/null 2>&1; then
-  echo "Ошибка: gh не авторизован. Выполните: gh auth login" >&2
+  echo "Error: gh is not authenticated. Run 'gh auth login'." >&2
   exit 1
 fi
 
@@ -58,9 +58,9 @@ EOF
 
     echo "==> $repo / $branch"
     gh api -X PUT "repos/$repo/branches/$branch/protection" --input "$payload" >/dev/null
-    echo "    ok: PR обязателен, required context '$CHECK_CONTEXT', direct push запрещён"
+    echo "    ok: pull requests required, required check '$CHECK_CONTEXT', direct push restricted"
   done
 done
 
 echo
-echo "Готово. Проверка: gh api repos/Koshsky/erp-backend/branches/main/protection"
+echo "Done. Verify with: gh api repos/Koshsky/erp-backend/branches/main/protection"
