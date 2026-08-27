@@ -10,6 +10,7 @@
 #   - PR обязателен, 1 approval, stale-approvals отклоняются
 #   - required status check: "CI / Branch policy" (gitlink workflow из
 #     .github/workflows/ci.yml) + strict (ветка должна быть актуальной)
+#   - незакрытые треды блокируют merge (required_conversation_resolution)
 #   - прямые пуши запрещены (restrictions пустые) — только через PR;
 #     для dev enforce_admins=false, чтобы владелец мог пушить напрямую
 #   - linear history, force push и удаление ветки запрещены
@@ -49,6 +50,7 @@ for repo in "${REPOS[@]}"; do
     "required_approving_review_count": $REQUIRED_REVIEWS,
     "dismiss_stale_reviews": true
   },
+  "required_conversation_resolution": true,
   "restrictions": { "users": [], "teams": [], "apps": [] },
   "required_linear_history": true,
   "allow_force_pushes": { "enabled": false },
