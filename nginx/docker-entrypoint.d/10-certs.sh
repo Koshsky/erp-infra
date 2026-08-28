@@ -1,8 +1,8 @@
 #!/bin/sh
-# Автогенерация TLS-сертификатов при старте nginx, если их ещё нет.
-# Это позволяет не думать о сертификатах: docker compose up сгенерирует их сам.
-# Сертификаты кладутся в смонтированный каталог /etc/nginx/certs и переживают
-# перезапуски контейнера.
+# Auto-generates TLS certificates at nginx startup if they do not exist yet.
+# This removes certificate worries: `docker compose up` generates them itself.
+# Certificates go to the mounted /etc/nginx/certs directory and survive
+# container restarts.
 set -eu
 
 if [ -f /usr/local/bin/generate-certs.sh ]; then
