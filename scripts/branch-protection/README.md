@@ -1,101 +1,104 @@
-# Защита веток и этапы верификации (dev → staging → main)
+# Branch protection and verification stages (dev → staging → main)
 
-Во всех трёх репозиториях (`erp-infra`, `erp-backend`, `erp-frontend`) действует
-поток веток:
+All three repositories (`erp-infra`, `erp-backend`, `erp-frontend`) follow the
+same branch flow:
 
 ```
 feature/*, hotfix/*  ──PR──▶  dev  ──PR──▶  staging  ──PR──▶  main
-   (разработка)           (интеграция)   (системное тестирование,   (продакшен)
-                                          пред-продакшен)
+   (development)         (integration)   (system testing,     (production)
+                                          pre-production)
 ```
 
-## Как это работает (и чего GitHub не умеет «из коробки»)
+## How it works (and what GitHub cannot do out of the box)
 
-Kлассическая Branch protection не умеет ограничивать **ветку-источник PR**
-(«main принимает PR только из staging»). Поэтому правило реализуется связкой
-из двух частей:
+Classic branch protection cannot restrict the **PR source branch** ("main
+accepts PRs only from staging"). The rule is therefore implemented as a pair
+of two parts:
 
-1. **Запрет прямых пушей** в ветку + обязательный PR с ревью (настройка
-   защиты в Settings → Branches).
-2. **CI-проверка источника PR** — workflow `.github/workflows/ci.yml`,
-   job `Branch policy` (check name **`CI / Branch policy`**): на событии
-   `pull_request` сверяет `github.head_ref` с `github.base_ref`:
+1. **Direct pushes forbidden** to the branch + mandatory PR with review
+   (protection settings in Settings → Branches).
+2. **CI check of the PR source** — workflow `.github/workflows/ci.yml`,
+   job `Branch policy` (check name **`CI / Branch policy`**): on the
+   `pull_request` event it compares `github.head_ref` with `github.base_ref`:
 
-   | base (куда PR) | разрешённые source (откуда) |
+   | base (PR target) | allowed source |
    |---|---|
    | `main` | `staging` |
    | `staging` | `dev` |
    | `dev` | `feature/*`, `hotfix/*` |
-   | прочее | без ограничений |
+   | other | no restrictions |
 
-   Эта проверка и указывается как **required status check** в защите ветки.
+   This check is then set as a **required status check** in the branch protection.
 
-(Новые GitHub Rulesets тоже не имеют условия по source-ветке — нужен тот же
-CI-подход. `branch policy` ловит и PR из форков: `head_ref` там — имя ветки
-форка.)
+(New GitHub Rulesets also have no source-branch condition — the same CI
+approach is needed. `branch policy` also catches PRs from forks: there
+`head_ref` is the branch name of the fork.)
 
-## Проверки в CI помимо политики
+## CI checks besides the policy
 
 - **erp-backend**: `Go tests` (build + `go test ./...`), `Golangci-lint`
-  (golangci-lint v2.12.2, golden config из репозитория).
+  (golangci-lint v2.12.2, golden config from the repository).
 - **erp-frontend**: `Typecheck & build` (`npm ci` → `vue-tsc` → `vite build`).
-  Storybook/vitest-проверки можно добавить позже: vitest в этом репо идёт
-  через `@storybook/addon-vitest` и пока не вынесен в отдельный `npm`-скрипт.
-- **erp-infra**: только `Branch policy`. Проверки `docker compose config` /
-  `nginx -t` требуют `.env` и секретов, которых нет в CI, — добавляются
-  отдельно, когда появится staging-окружение с секретами.
+  Storybook/vitest checks can be added later: vitest in this repo runs through
+  `@storybook/addon-vitest` and is not yet exposed as a separate `npm` script.
+- **erp-infra**: only `Branch policy`. Checks like `docker compose config` /
+  `nginx -t` need `.env` and secrets, which CI does not have — they are added
+  separately once a staging environment with secrets exists.
 
-## Порядок включения (однократно)
+## Enabling (one-time)
 
-1. **Запушить workflow** `.github/workflows/ci.yml` в каждый репозиторий
-   (в этой сессии они лежат на ветках `feature/ci-pipelines` — открыть PRы:
-   `feature/ci-pipelines` → `dev` в каждом из трёх репозиториев).
-2. **Дождаться первого прогона** `CI / Branch policy` на любом PR: проверка
-   появится в списке доступных required checks (иначе её нельзя выбрать).
-3. **Включить защиту** одним из способов:
+1. **Push the workflow** `.github/workflows/ci.yml` to each repository
+   (in this session they live on `feature/ci-pipelines` branches — open PRs:
+   `feature/ci-pipelines` → `dev` in each of the three repositories).
+2. **Wait for the first run** of `CI / Branch policy` on any PR: the check
+   appears in the list of available required checks (otherwise it cannot be
+   selected).
+3. **Enable protection** in one of two ways:
 
-   **Скрипт (быстро, ×3 репозитория):**
+   **Script (fast, ×3 repositories):**
    ```bash
    gh auth login          # scope: repo
    ./scripts/branch-protection/apply-protection.sh
    ```
 
-   **Или через UI** (Settings → Branches → Add rule) — на каждую ветку
+   **Or via the UI** (Settings → Branches → Add rule) — for each branch
    `main`, `staging`, `dev`:
    - ☑ Require a pull request before merging → 1 approval,
      ☑ Dismiss stale pull request approvals
    - ☑ Require status checks → ☑ Require branches to be up to date →
-     отметить **`CI / Branch policy`**
+     select **`CI / Branch policy`**
    - ☑ Require conversation resolution
-   - ☑ Restrict who can push → список пуст (пуши — только через PR)
+   - ☑ Restrict who can push → empty list (pushes only via PR)
    - Enforce all restrictions for administrators: `main`/`staging` ☑,
-     `dev` ☐ (владелец пушит в dev напрямую)
-   - ☑ Require linear history; force push и deletion — заблокированы
+     `dev` ☐ (the owner pushes to dev directly)
+   - ☑ Require linear history; force push and deletion — blocked
 
-4. **Проверить:**
+4. **Verify:**
    ```bash
    git push origin main                          # rejected
-   # PR dev → main   -> CI / Branch policy красный
-   # PR staging → main -> CI / Branch policy зелёный
+   # PR dev → main   -> CI / Branch policy red
+   # PR staging → main -> CI / Branch policy green
    gh api repos/Koshsky/erp-backend/branches/main/protection
    ```
 
-## Смена политики
+## Changing the policy
 
-Правила источника PR правятся в job `policy` каждого
-`.github/workflows/ci.yml`. Имя проверки (`CI / Branch policy`) менять нельзя
-без обновления `required_status_checks` в защите — держите их синхронными.
+The PR-source rules are edited in the `policy` job of each
+`.github/workflows/ci.yml`. The check name (`CI / Branch policy`) must not be
+changed without updating `required_status_checks` in the protection — keep
+them in sync.
 
-## Ограничения и следующие шаги
+## Limitations and next steps
 
-- **Приватные подмодули**: если `erp-backend`/`erp-frontend` приватные,
-  корневому CI для проверки gitlink-пинов понадобится PAT — пока корневой
-  репозиторий проверяет только веточную политику.
-- **Форки**: PR из форка проходит policy по имени ветки форка; если нужно
-  ограничивать и «откуда» (свой репозиторий), добавьте проверку
+- **Private submodules**: if `erp-backend`/`erp-frontend` are private, the
+  root CI needs a PAT to verify gitlink pins — for now the root repository only
+  checks the branch policy.
+- **Forks**: a PR from a fork passes policy by the fork's branch name; if you
+  need to restrict "from where" (own repository) too, add a check on
   `github.event.pull_request.head.repo.full_name`.
-- **hotfix/**: ветки `hotfix/*` разрешены в `dev` сразу. Напрямую в `main`
-  они **не проходят** — policy принимает в `main` только `staging`, поэтому
-  срочные фиксы в прод идут обычным путём `hotfix/* → dev → staging → main`.
-  Если нужен обходной путь `hotfix/* → main`, сначала добавьте исключение
-  в job `policy` каждого `.github/workflows/ci.yml` — сейчас его нет.
+- **hotfix/**: `hotfix/*` branches are allowed into `dev` right away. Directly
+  into `main` they **do not pass** — the policy only admits `staging` into
+  `main`, so urgent production fixes go the usual way
+  `hotfix/* → dev → staging → main`. If a `hotfix/* → main` bypass is needed,
+  first add an exception in the `policy` job of each
+  `.github/workflows/ci.yml` — there is none at the moment.
