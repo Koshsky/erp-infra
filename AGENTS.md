@@ -1,79 +1,84 @@
-# AGENTS.md (корневой)
+# AGENTS.md (root)
 
-Точка входа для любой агентной сессии в этом репозитории (MVS ERP monorepo).
-Этот файл — обязательный первый шаг планирования и выполнения.
+Entry point for any agent session in this repository (MVS ERP monorepo).
+This file is a mandatory first step for planning and execution.
 
-## Правило №1 — читай AGENTS.md перед любой работой
+## Language rule (mandatory)
 
-Любая сессия в любом рабочем пространстве этого репозитория **начинается с
-чтения AGENTS.md** — и не один раз:
+- Code comments, documentation, and commit messages are written in **English only**.
+- User-facing UI strings and runtime messages stay in Russian (the product language) — do not translate them.
+- Existing instructions below are kept in English; treat them as the single source of truth.
 
-1. **В начале сессии** — прочитай этот корневой файл.
-2. **Перед каждым новым заданием** (даже в рамках той же сессии) — перечитай
-   AGENTS.md тех сервисов, которых касается работа.
-3. **После переключения контекста** (долгий перерыв, новая задача, чужой
-   diff) — повторное чтение обязательно: правила меняются, память устаревает.
+## Rule #1 — read AGENTS.md before any work
 
-Не полагайся на то, что «уже читал» — файлы правил живые.
+Any session in any workspace of this repository **starts by reading
+AGENTS.md** — and not just once:
 
-## Порядок чтения по сервисам
+1. **At session start** — read this root file.
+2. **Before each new task** (even within the same session) — re-read the
+   AGENTS.md of the services the work touches.
+3. **After a context switch** (long break, new task, someone else's diff) —
+   re-read is mandatory: rules change, memory goes stale.
 
-Репозиторий — monorepo из двух git-submodule сервисов. Перед работой читай
-правила затрагиваемых сервисов:
+Never rely on "I already read it" — rule files are alive.
 
-| Сервис | Путь | Когда |
+## Reading order per service
+
+The repository is a monorepo of two git-submodule services. Before working,
+read the rules of the affected services:
+
+| Service | Path | When |
 |---|---|---|
-| Backend (Go) | `services/backend/AGENTS.md` | любая работа в бэкенде |
-| Frontend (Vue) | `services/frontend/AGENTS.md` | любая работа во фронтенде |
-| Профильные правила backend | `services/backend/.continue/rules/*.md` | работа в `internal/**/delivery`, `sqlc`, `internal/auth` |
-| Профильные правила frontend | `services/frontend/.continue/rules/*.md` | работа с API-клиентом, `src/components/` |
-| Код-ревью | `services/*/CODE_REVIEW.md` | рефакторинг, архитектурные правки, крупные изменения |
+| Backend (Go) | `services/backend/AGENTS.md` | any backend work |
+| Frontend (Vue) | `services/frontend/AGENTS.md` | any frontend work |
+| Backend profile rules | `services/backend/.continue/rules/*.md` | work in `internal/**/delivery`, `sqlc`, `internal/auth` |
+| Frontend profile rules | `services/frontend/.continue/rules/*.md` | work with the API client, `src/components/` |
+| Code review | `services/*/CODE_REVIEW.md` | refactoring, architectural changes, large changes |
 
-## Порядок действий в начале сессии
+## Steps at session start
 
-1. `pwd` — определить текущий каталог.
-2. Прочитать корневой `AGENTS.md` (этот файл).
-3. Прочитать `AGENTS.md` всех затронутых сервисов (backend и/или frontend).
-4. Прочитать профильные `.continue/rules/*.md` и `CODE_REVIEW.md` для
-   затрагиваемых областей.
-5. Только после этого приступать к планированию/изменениям.
+1. `pwd` — determine the current directory.
+2. Read the root `AGENTS.md` (this file).
+3. Read the `AGENTS.md` of all affected services (backend and/or frontend).
+4. Read the profile `.continue/rules/*.md` and `CODE_REVIEW.md` for the affected areas.
+5. Only then start planning/changes.
 
-## Почему это важно
+## Why this matters
 
-- В репозитории строгие конвенции: слоёная архитектура, envelope `{data,
-  error}`, «API только в views/composables/store», generated-код (sqlc,
-  swagger, OpenAPI-клиент) — его нельзя править руками, регенерация обязательна.
-- Нарушение правил ломает сборку/контракты (например, правка `src/api/*`
-  потеряется при регенерации; новый эндпоинт без swagger не попадёт в клиент).
-- Чтение AGENTS.md — дешёвый шаг, который исключает целый класс ошибок.
+- The repository has strict conventions: layered architecture, `{data, error}`
+  envelope, "API only in views/composables/store", generated code (sqlc,
+  swagger, OpenAPI client) — it must not be hand-edited, regeneration is required.
+- Breaking the rules breaks builds/contracts (e.g., editing `src/api/*` is lost
+  on regeneration; a new endpoint without swagger does not reach the client).
+- Reading AGENTS.md is cheap and eliminates a whole class of errors.
 
-## Проверка и пересборка после изменений
+## Verification and rebuild after changes
 
-После любого изменения кода обязательно проверить и пересобрать затронутое:
+After any code change, verify and rebuild what was touched:
 
 - **Frontend (Vue)**:
-  1. `npm run check` (vue-tsc) и, при необходимости, `npm run build` в
+  1. `npm run check` (vue-tsc) and, if needed, `npm run build` in
      `services/frontend/`.
-  2. **Пересобрать Electron-обвязку**: из `services/frontend/desktop/`
-     `npm run dist` / `dist:win` / `dist:linux` (electron-builder). Сборка
-     требует предварительно собранного `services/frontend/dist/`.
-  3. Вторым шагом — **перезапустить стек**: из корня репозитория
+  2. **Rebuild the Electron wrapper**: from `services/frontend/desktop/`
+     `npm run dist` / `dist:win` / `dist:linux` (electron-builder). Building
+     requires a previously built `services/frontend/dist/`.
+  3. Second step — **restart the stack**: from the repository root
      `docker compose down && docker compose up --build -d`.
-- **Backend (Go)**: только перезапуск стека — `docker compose down &&
-  docker compose up --build -d` (из корня репозитория). Desktop-сборка при
-  изменениях бэкенда не нужна.
+- **Backend (Go)**: only restart the stack — `docker compose down &&
+  docker compose up --build -d` (from the repository root). A desktop build is
+  not needed for backend changes.
 
-### Тяжёлые процессы — параллельно
+### Heavy processes — in parallel
 
-Тяжёлые/долгие команды (сборки vite, electron-builder, docker compose
-rebuild) запускать в **фоновых параллельных процессах** (run_in_background),
-а не последовательно в одном вызове — это сокращает общее время цикла.
-Не дублировать запущенную работу и собирать результаты по завершении.
+Heavy/long commands (vite builds, electron-builder, docker compose rebuild)
+should run in **background parallel processes** (run_in_background) rather than
+sequentially in one call — this shortens the overall cycle time.
+Do not duplicate running work and collect results on completion.
 
-## Структура репозитория (кратко)
+## Repository structure (brief)
 
 - `services/backend` — Go 1.25 / Gin / Wire / sqlc / Flyway (submodule erp-backend).
 - `services/frontend` — Vue 3 / TS / Vite / Pinia / Storybook + `desktop/`
-  (Electron-обвязка) (submodule erp-frontend).
-- `nginx/`, `scripts/`, `docker-compose.yml` — инфраструктура стека.
-- Конфиг и секреты: `config.yaml` (backend) + `.env` (только секреты).
+  (Electron wrapper) (submodule erp-frontend).
+- `nginx/`, `scripts/`, `docker-compose.yml` — stack infrastructure.
+- Config and secrets: `config.yaml` (backend) + `.env` (secrets only).

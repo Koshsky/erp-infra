@@ -1,6 +1,6 @@
 .env
+.dsh-project-memory
 
-SECURITY_AUDIT.md
 .electron-cache/
 .npm-cache/
 .xdg-cache/
@@ -9,6 +9,8 @@ SECURITY_AUDIT.md
 .gopath/
 .lintcache/
 .docker-cfg/
+.docker-config/
+.golangci-lint-cache/
 
 *.pid
 *.pid.lock
@@ -33,3 +35,4 @@ docker-compose.override.yml
 temp/
 tmp/
 backups/
+viz/

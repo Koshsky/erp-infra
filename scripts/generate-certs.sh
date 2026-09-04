@@ -1,13 +1,13 @@
 #!/bin/sh
-# Генерирует самоподписанный TLS-сертификат (openssl, без внешних зависимостей)
-# для nginx. SAN покрывает домен (по умолчанию resource-planning.mvs), localhost,
-# loopback и все локальные IP хоста — чтобы сайт открывался по HTTPS в локальной
-# сети без домена в DNS.
+# Generates a self-signed TLS certificate (openssl, no external dependencies)
+# for nginx. The SAN covers the domain (default resource-planning.mvs), localhost,
+# loopback and all local host IPs — so the site opens over HTTPS on the local
+# network without a DNS entry.
 #
-# Идемпотентен: если сертификаты уже есть — ничего не делает.
-# Регенерация: ./scripts/generate-certs.sh --force
-# Окружение: CERT_DIR (по умолчанию nginx/certs), DOMAIN (по умолчанию
-# resource-planning.mvs), CERTS_DAYS (по умолчанию 3650)
+# Idempotent: if certificates already exist — does nothing.
+# Regeneration: ./scripts/generate-certs.sh --force
+# Environment: CERT_DIR (default nginx/certs), DOMAIN (default
+# resource-planning.mvs), CERTS_DAYS (default 3650)
 set -eu
 
 FORCE=0
@@ -33,7 +33,7 @@ command -v openssl >/dev/null 2>&1 || {
 
 mkdir -p "$CERT_DIR"
 
-# SAN: домен + localhost + loopback + все адреса интерфейсов хоста
+# SAN: domain + localhost + loopback + all host interface addresses
 SANS="DNS:${DOMAIN},DNS:localhost,IP:127.0.0.1,IP:::1"
 for ip in $(hostname -I 2>/dev/null || true); do
   case "$ip" in

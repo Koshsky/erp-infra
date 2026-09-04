@@ -1,0 +1,42 @@
+# Grafana Loki — single-binary config for the audit-log storage.
+# Filesystem storage on the loki_data volume; no auth (internal docker network
+# only — the ERP backend and Grafana talk to it, it is not exposed to the host).
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# Audit-log retention: 31 days (change here, then recreate the container).
+limits_config:
+  retention_period: 744h
+  allow_structured_metadata: true
+
+compactor:
+  working_directory: /loki/compactor
+  # Required by Loki 3.x whenever retention is enabled.
+  delete_request_store: filesystem
+  retention_enabled: true
+
+# Minimal readyness — the default anonymous access is fine behind the docker
+# network; the ERP backend is the only external writer.

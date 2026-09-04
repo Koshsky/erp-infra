@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Применяет защиту веток main/staging/dev в трёх репозиториях через gh CLI.
+# Applies main/staging/dev branch protection in the three repositories via the gh CLI.
 #
-# Требования:
-#   - gh установлен и авторизован:  gh auth login  (scope: repo)
-#   - у вашего аккаунта есть права администратора в Koshsky/erp-infra,
+# Requirements:
+#   - gh installed and authenticated:  gh auth login  (scope: repo)
+#   - your account has admin rights in Koshsky/erp-infra,
 #     Koshsky/erp-backend, Koshsky/erp-frontend
 #
-# Что настраивается на каждой ветке:
-#   - PR обязателен, 1 approval, stale-approvals отклоняются
-#   - required status check: "CI / Branch policy" (gitlink workflow из
-#     .github/workflows/ci.yml) + strict (ветка должна быть актуальной)
-#   - незакрытые треды блокируют merge (required_conversation_resolution)
-#   - прямые пуши запрещены (restrictions пустые) — только через PR;
-#     для dev enforce_admins=false, чтобы владелец мог пушить напрямую
-#   - linear history, force push и удаление ветки запрещены
+# What is configured on each branch:
+#   - PR required, 1 approval, stale approvals rejected
+#   - required status check: "CI / Branch policy" (gitlink workflow from
+#     .github/workflows/ci.yml) + strict (branch must be up to date)
+#   - unresolved threads block merge (required_conversation_resolution)
+#   - direct pushes forbidden (empty restrictions) — only via PR;
+#     for dev enforce_admins=false so the owner can push directly
+#   - linear history, force push and branch deletion forbidden
 #
-# GitHub не умеет ограничивать ветку-источник PR «из коробки» — само правило
-# «main ← только staging» выполняет CI-проверка "CI / Branch policy".
+# GitHub cannot restrict the PR source branch out of the box — the rule
+# "main ← staging only" is enforced by the CI check "CI / Branch policy".
 set -euo pipefail
 
 REPOS=(Koshsky/erp-infra Koshsky/erp-backend Koshsky/erp-frontend)
@@ -34,9 +34,9 @@ trap 'rm -f "$payload"' EXIT
 for repo in "${REPOS[@]}"; do
   for branch in main staging dev; do
     if [ "$branch" = "dev" ]; then
-      enforce="false"   # владелец может пушить в dev напрямую
+      enforce="false"   # the owner can push to dev directly
     else
-      enforce="true"    # main/staging: защита действует и на админов
+      enforce="true"    # main/staging: protection applies to admins too
     fi
 
     cat >"$payload" <<EOF
