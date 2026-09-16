@@ -36,3 +36,6 @@ temp/
 tmp/
 backups/
 viz/
+
+# Agent scratch workspace
+.agent-work/
