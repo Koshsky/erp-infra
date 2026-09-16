@@ -11,8 +11,10 @@ services:
       - ./scripts/generate-certs.sh:/usr/local/bin/generate-certs.sh:ro
       - ./nginx/docker-entrypoint.d:/docker-entrypoint.d:ro
     depends_on:
-      - erp
-      - frontend
+      erp:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     networks:
       - app-network
 
@@ -28,10 +30,37 @@ services:
     depends_on:
       flyway:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     networks:
       - app-network
     expose:
       - "8080"
+    # Liveness via the unauthenticated /api/v1/health endpoint (alpine/busybox
+    # wget, inside the container against the app itself — not through nginx).
+    # nginx depends on this condition so it only starts once the API is ready.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks:
+      - app-network
+    expose:
+      - "6379"
+    # Rate limiter backend (M1): shared token buckets across api instances.
+    # Fail-open in the app (in-memory fallback) if Redis is unavailable.
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   jaeger:
     image: jaegertracing/all-in-one:1.76.0
